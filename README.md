@@ -25,8 +25,8 @@ A modern, full-stack patient referral intake system built with Next.js, tRPC, Dr
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
-- PostgreSQL 15+ (local installation or cloud database)
+- Node.js
+- PostgreSQL (local installation or cloud database)
 - npm or yarn package manager
 
 ## 🛠️ Installation & Setup
@@ -34,7 +34,7 @@ A modern, full-stack patient referral intake system built with Next.js, tRPC, Dr
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/patient-referral-portal.git
+git clone https://github.com/kerolosNabil247/patient-referral-portal.git
 cd patient-referral-portal
 2. Install Dependencies
 bash
@@ -47,7 +47,7 @@ bash
 # Check if PostgreSQL is running
 psql --version
 
-# Start PostgreSQL (Windows)
+# Start PostgreSQL (Windows) (postgresql-x64-17 may differ depend on your postgresql version)
 net start postgresql-x64-17
 
 # Create the database
@@ -84,6 +84,7 @@ bash
 npm run db:studio
 This opens a web interface at http://localhost:4983 to view and manage your database.
 
+
 🏗️ Project Structure
 text
 patient-referral-portal/
@@ -119,167 +120,70 @@ patient-referral-portal/
 │   └── migrate.ts              # Migration runner
 ├── .env.example                # Environment variables template
 └── package.json
-📐 Architecture Decisions & Tradeoffs
-Technology Stack Rationale
-Next.js App Router
-Why: Provides server-side rendering capabilities for better SEO and initial load performance
+```
+## 📐 Architecture Decisions
 
-Tradeoff: Slightly more complex setup than Pages Router, but better for future scaling
+### Next.js App Router
+**Why**: Provides server-side rendering for better SEO and initial load performance while maintaining client-side interactivity. The App Router offers better layout organization and server components.
 
-tRPC for API Layer
-Why: End-to-end type safety without code generation. Shared types between client and server prevent runtime errors
+**Tradeoff**: Slightly more complex than Pages Router, but provides better scalability for larger applications.
 
-Tradeoff: tRPC is less common than REST, but type safety benefits outweigh the learning curve
+### tRPC for API Layer
+**Why**: Enables end-to-end type safety without code generation. The same TypeScript types are used on both client and server, eliminating API contract mismatches.
 
-Drizzle ORM
-Why: Type-safe SQL with excellent TypeScript support. Better performance than Prisma for complex queries
+**Tradeoff**: Less common than REST, but the type safety benefits significantly reduce runtime errors.
 
-Tradeoff: Requires more manual migration management than Prisma, but offers better performance and flexibility
+### Drizzle ORM
+**Why**: Type-safe SQL with excellent TypeScript support. Provides better performance than Prisma for complex queries and gives full control over SQL generation.
 
-Zod for Validation
-Why: Single source of truth for validation logic. Same schema used on both client and server ensures consistency
+**Tradeoff**: Requires manual migration management, but offers better performance and flexibility.
 
-Tradeoff: Slight overhead of maintaining schemas, but prevents validation drift between layers
+### Zod for Validation
+**Why**: Single source of truth for validation logic. The same schema validates data on both client and server, ensuring consistency.
 
-React Hook Form
-Why: Uncontrolled components reduce re-renders, better performance for forms with many fields
+**Tradeoff**: Slight overhead of maintaining schemas, but prevents validation drift between layers.
 
-Tradeoff: Slightly steeper learning curve than controlled forms, but better for production applications
+### React Hook Form
+**Why**: Uncontrolled components reduce re-renders, providing better performance for forms with many fields.
 
-Form Validation Strategy
-The form uses real-time validation with:
+**Tradeoff**: Slightly steeper learning curve than controlled forms, but better for production applications.
 
-On blur: Shows errors after user leaves a field
+## 🗄️ Database Schema
 
-On change: Updates validation state as user types
+The `referrals` table stores all patient referrals with the following structure:
 
-On submit: Final validation before submission
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| first_name | VARCHAR(100) | Patient first name |
+| last_name | VARCHAR(100) | Patient last name |
+| date_of_birth | VARCHAR(10) | Patient date of birth |
+| phone_number | VARCHAR(20) | Patient contact |
+| email | VARCHAR(255) | Optional patient email |
+| law_firm_name | VARCHAR(200) | Referring law firm |
+| attorney_name | VARCHAR(200) | Attorney/case manager |
+| attorney_email | VARCHAR(255) | Attorney email |
+| attorney_phone | VARCHAR(20) | Attorney phone |
+| primary_complaint | TEXT | Referral reason (max 500 chars) |
+| preferred_location | VARCHAR(50) | Clinic location (Anaheim, Culver City, Downey, El Monte, Long Beach, Los Angeles) |
+| appointment_type | VARCHAR(20) | In-Person or Telemedicine |
+| status | VARCHAR(20) | Workflow status (new, in_review, contacted, completed) |
+| created_at | TIMESTAMP | Auto-generated timestamp |
 
-Visual feedback: Red borders, error messages with icons, focus states
+## 🔧 Development Commands
 
-Database Schema Design
-Key decisions:
-
-UUID primary keys: Better for distributed systems and prevents ID guessing
-
-Status tracking: Allows referral workflow management (new → in_review → contacted → completed)
-
-Separate attorney fields: Law firms often have different contacts than patients
-
-Optional patient email: Some patients may not have email, but attorney email is required
-
-Error Handling Strategy
-Client-side: Zod validates before submission, preventing invalid data from reaching the server
-
-Server-side: Database constraints and additional validation ensure data integrity
-
-User feedback: Clear error messages for validation failures and system errors
-
-Success response: Returns referral ID and estimated follow-up date for reference
-
-🔧 Development Commands
-Command	Description
-npm run dev	Start development server
-npm run build	Build for production
-npm run start	Start production server
-npm run db:generate	Generate Drizzle migrations
-npm run db:migrate	Run database migrations
-npm run db:studio	Open Drizzle Studio UI
-npm run lint	Run ESLint
-🗄️ Database Schema
-Referrals Table
-Column	Type	Description
-id	UUID	Primary key, auto-generated
-first_name	VARCHAR(100)	Patient first name
-last_name	VARCHAR(100)	Patient last name
-date_of_birth	VARCHAR(10)	Patient DOB (YYYY-MM-DD)
-phone_number	VARCHAR(20)	Patient phone number
-email	VARCHAR(255)	Patient email (optional)
-law_firm_name	VARCHAR(200)	Referring law firm
-attorney_name	VARCHAR(200)	Attorney/case manager
-attorney_email	VARCHAR(255)	Attorney email
-attorney_phone	VARCHAR(20)	Attorney phone
-primary_complaint	TEXT	Reason for referral (max 500 chars)
-preferred_location	VARCHAR(50)	Preferred clinic location
-appointment_type	VARCHAR(20)	In-Person or Telemedicine
-status	VARCHAR(20)	new/in_review/contacted/completed
-created_at	TIMESTAMP	Auto-generated timestamp
-🎯 API Endpoints
-The application uses tRPC, so there's only one HTTP endpoint:
-
-text
-POST /api/trpc/referral.submitReferral
-Request Schema (Shared with Frontend)
-typescript
-{
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string; // YYYY-MM-DD
-  phoneNumber: string;
-  email?: string;
-  lawFirmName: string;
-  attorneyName: string;
-  attorneyEmail: string;
-  attorneyPhone: string;
-  primaryComplaint: string; // max 500 chars
-  preferredLocation: "Anaheim" | "Culver City" | "Downey" | "El Monte" | "Long Beach" | "Los Angeles";
-  appointmentType: "In-Person" | "Telemedicine";
-}
-Response Schema
-typescript
-{
-  success: true,
-  referralId: string,
-  message: string,
-  estimatedFollowUp: string // e.g., "Our team will contact the patient within 24 hours (by Thursday, April 2, 2026)"
-}
-🧪 Testing the Application
-Form Validation Tests
-Test Case	Expected Result
-Empty form submission	Red borders and error messages on all required fields
-Invalid email	"Please enter a valid email address"
-Too short phone number	"Phone number must be at least 10 characters"
-Invalid date format	"Invalid date format. Use YYYY-MM-DD"
-500+ character complaint	"Primary complaint must be 500 characters or less"
-Valid submission	Green success message with referral ID
-Database Verification
-bash
-# Check if referral was saved
-psql -U postgres -d referral_portal -c "SELECT * FROM referrals ORDER BY created_at DESC LIMIT 5;"
-
-# Count total referrals
-psql -U postgres -d referral_portal -c "SELECT COUNT(*) FROM referrals;"
-🚦 Status Codes & Error Handling
-The application handles errors gracefully:
-
-Validation Errors: Client-side with field-specific messages
-
-Database Errors: Server-side with user-friendly error messages
-
-Network Errors: Handled with fallback messages and retry logic
-
-📝 Future Improvements
-Authentication: Add role-based access for clinics and administrators
-
-File Uploads: Allow attachment of medical records or intake documents
-
-Email Notifications: Send confirmation emails to both parties
-
-Dashboard: Admin interface to view and manage referrals
-
-Analytics: Track submission rates and completion times
-
-API Rate Limiting: Prevent abuse of the referral system
-
-Audit Logging: Track all changes to referrals
-
-Webhooks: Integrate with external systems for real-time notifications
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run db:generate` | Generate migrations |
+| `npm run db:migrate` | Run migrations |
+| `npm run db:studio` | Open Drizzle Studio |
 
 🤝 Contributing
 This project is built as a demonstration of full-stack development with modern TypeScript technologies. For any issues or suggestions, please open an issue in the repository.
 
-📄 License
-MIT
 
 🙏 Acknowledgments
 Next.js - React framework
